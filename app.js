@@ -20,6 +20,9 @@ initializeTables().catch(err => {
   console.error('Error al inicializar base de datos:', err);
 });
 
+// Log para debug - verificar FRONTEND_URL
+console.log('🌐 FRONTEND_URL configurada:', process.env.FRONTEND_URL);
+
 // CORS Configuration
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:4200',
