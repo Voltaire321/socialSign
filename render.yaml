@@ -1,0 +1,32 @@
+services:
+  - type: web
+    name: social-login-api
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node bin/www
+    envVars:
+      - key: DB_HOST
+        value: auth-db1026.hstgr.io
+      - key: DB_USER
+        value: u739395885_socialltx
+      - key: DB_PASSWORD
+        value: bUXtFmLcrSe3gXG.1325
+      - key: DB_NAME
+        value: u739395885_sociallogin
+      - key: DB_PORT
+        value: 3306
+      - key: GOOGLE_CLIENT_ID
+        value: 413411184003-e7kc039vhmjsn973abgkevo3hf00obm1.apps.googleusercontent.com
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false # Este valor se debe agregar manualmente en Render Dashboard por seguridad
+      - key: GOOGLE_CALLBACK_URL
+        sync: false # Actualizar con la URL real de Render
+      - key: JWT_SECRET
+        generateValue: true
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: FRONTEND_URL
+        value: https://social.ltx.mx
+      - key: PORT
+        value: 3000
