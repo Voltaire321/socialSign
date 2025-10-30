@@ -53,6 +53,52 @@ async function initializeTables() {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     `);
 
+    // Tabla de perfiles de TikTok trackeados
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS tiktok_profiles (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        tiktok_id VARCHAR(255) NOT NULL,
+        tiktok_username VARCHAR(255) NOT NULL,
+        tiktok_nickname VARCHAR(255),
+        avatar_url VARCHAR(500),
+        follower_count INT DEFAULT 0,
+        following_count INT DEFAULT 0,
+        video_count INT DEFAULT 0,
+        heart_count BIGINT DEFAULT 0,
+        is_verified BOOLEAN DEFAULT FALSE,
+        is_private BOOLEAN DEFAULT FALSE,
+        bio TEXT,
+        added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES google_users(id) ON DELETE CASCADE,
+        UNIQUE KEY unique_user_tiktok (user_id, tiktok_id),
+        INDEX idx_user_id (user_id),
+        INDEX idx_tiktok_id (tiktok_id)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    `);
+
+    // Tabla de historial diario de estadísticas de TikTok
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS tiktok_stats_history (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        profile_id INT NOT NULL,
+        follower_count INT DEFAULT 0,
+        following_count INT DEFAULT 0,
+        video_count INT DEFAULT 0,
+        heart_count BIGINT DEFAULT 0,
+        follower_change INT DEFAULT 0,
+        video_change INT DEFAULT 0,
+        heart_change BIGINT DEFAULT 0,
+        recorded_at DATE NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (profile_id) REFERENCES tiktok_profiles(id) ON DELETE CASCADE,
+        UNIQUE KEY unique_profile_date (profile_id, recorded_at),
+        INDEX idx_profile_id (profile_id),
+        INDEX idx_recorded_at (recorded_at)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    `);
+
     console.log('✓ Tablas de base de datos inicializadas correctamente');
     connection.release();
   } catch (error) {
