@@ -78,18 +78,24 @@ router.post('/add-profile', isAuthenticated, async (req, res) => {
 
       const profileId = result.insertId;
 
+      // Obtener fecha actual en zona horaria de México
+      const mexicoDate = new Date().toLocaleString('en-US', { timeZone: 'America/Mexico_City' });
+      const dateObj = new Date(mexicoDate);
+      const formattedDate = dateObj.toISOString().split('T')[0]; // Formato: YYYY-MM-DD
+
       // Insertar estadísticas iniciales en el historial
       await connection.query(
         `INSERT INTO tiktok_stats_history 
          (profile_id, follower_count, following_count, video_count, heart_count, 
           follower_change, video_change, heart_change, recorded_at) 
-         VALUES (?, ?, ?, ?, ?, 0, 0, 0, CURDATE())`,
+         VALUES (?, ?, ?, ?, ?, 0, 0, 0, ?)`,
         [
           profileId,
           userInfo.data.follower_count,
           userInfo.data.following_count,
           userInfo.data.video_count,
-          userInfo.data.heart_count
+          userInfo.data.heart_count,
+          formattedDate
         ]
       );
 

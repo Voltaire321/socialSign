@@ -95,12 +95,17 @@ router.post('/update-tiktok-profiles', async (req, res) => {
           ]
         );
 
+        // Obtener fecha actual en zona horaria de México
+        const mexicoDate = new Date().toLocaleString('en-US', { timeZone: 'America/Mexico_City' });
+        const dateObj = new Date(mexicoDate);
+        const formattedDate = dateObj.toISOString().split('T')[0]; // Formato: YYYY-MM-DD
+
         // Insertar o actualizar historial del día actual
         await connection.query(
           `INSERT INTO tiktok_stats_history 
            (profile_id, follower_count, following_count, video_count, heart_count, 
             follower_change, video_change, heart_change, recorded_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURDATE())
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
            ON DUPLICATE KEY UPDATE
              follower_count = VALUES(follower_count),
              following_count = VALUES(following_count),
@@ -117,7 +122,8 @@ router.post('/update-tiktok-profiles', async (req, res) => {
             currentData.heart_count,
             followerChange,
             videoChange,
-            heartChange
+            heartChange,
+            formattedDate
           ]
         );
 
