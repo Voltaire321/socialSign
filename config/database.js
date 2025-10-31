@@ -99,6 +99,24 @@ async function initializeTables() {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     `);
 
+    // Tabla de notificaciones de nuevos videos
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS tiktok_notifications (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        profile_id INT NOT NULL,
+        notification_type ENUM('new_video', 'milestone') DEFAULT 'new_video',
+        message TEXT,
+        is_read BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES google_users(id) ON DELETE CASCADE,
+        FOREIGN KEY (profile_id) REFERENCES tiktok_profiles(id) ON DELETE CASCADE,
+        INDEX idx_user_id (user_id),
+        INDEX idx_is_read (is_read),
+        INDEX idx_created_at (created_at)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    `);
+
     console.log('✓ Tablas de base de datos inicializadas correctamente');
     connection.release();
   } catch (error) {

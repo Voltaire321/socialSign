@@ -229,4 +229,87 @@ router.delete('/profile/:id', isAuthenticated, async (req, res) => {
   }
 });
 
+// Obtener notificaciones del usuario
+router.get('/notifications', isAuthenticated, async (req, res) => {
+  try {
+    const connection = await pool.getConnection();
+
+    const [notifications] = await connection.query(
+      `SELECT n.id, n.notification_type, n.message, n.is_read, n.created_at,
+              p.tiktok_username, p.tiktok_nickname, p.avatar_url, p.id as profile_id
+       FROM tiktok_notifications n
+       JOIN tiktok_profiles p ON n.profile_id = p.id
+       WHERE n.user_id = ?
+       ORDER BY n.created_at DESC
+       LIMIT 50`,
+      [req.userId]
+    );
+
+    connection.release();
+
+    res.json({ notifications });
+  } catch (error) {
+    console.error('Error fetching notifications:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Contar notificaciones no leídas
+router.get('/notifications/unread-count', isAuthenticated, async (req, res) => {
+  try {
+    const connection = await pool.getConnection();
+
+    const [result] = await connection.query(
+      'SELECT COUNT(*) as count FROM tiktok_notifications WHERE user_id = ? AND is_read = FALSE',
+      [req.userId]
+    );
+
+    connection.release();
+
+    res.json({ unreadCount: result[0].count });
+  } catch (error) {
+    console.error('Error counting unread notifications:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Marcar notificación como leída
+router.put('/notifications/:id/read', isAuthenticated, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const connection = await pool.getConnection();
+
+    await connection.query(
+      'UPDATE tiktok_notifications SET is_read = TRUE WHERE id = ? AND user_id = ?',
+      [id, req.userId]
+    );
+
+    connection.release();
+
+    res.json({ message: 'Notification marked as read' });
+  } catch (error) {
+    console.error('Error marking notification as read:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Marcar todas las notificaciones como leídas
+router.put('/notifications/read-all', isAuthenticated, async (req, res) => {
+  try {
+    const connection = await pool.getConnection();
+
+    await connection.query(
+      'UPDATE tiktok_notifications SET is_read = TRUE WHERE user_id = ?',
+      [req.userId]
+    );
+
+    connection.release();
+
+    res.json({ message: 'All notifications marked as read' });
+  } catch (error) {
+    console.error('Error marking all notifications as read:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 module.exports = router;
