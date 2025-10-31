@@ -30,3 +30,16 @@ services:
         value: https://social.ltx.mx
       - key: PORT
         value: 3000
+      - key: CRON_SECRET
+        generateValue: true
+
+  # Cron Job para actualizar perfiles de TikTok diariamente
+  - type: cron
+    name: tiktok-update-cron
+    runtime: node
+    schedule: "59 23 * * *" # Todos los días a las 11:59 PM (hora UTC)
+    buildCommand: npm install
+    startCommand: curl -X POST -H "x-cron-secret:${CRON_SECRET}" https://socialsign.onrender.com/api/cron/update-tiktok-profiles
+    envVars:
+      - key: CRON_SECRET
+        sync: false # Debe ser el mismo valor que en el servicio web
