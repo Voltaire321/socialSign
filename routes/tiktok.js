@@ -78,10 +78,11 @@ router.post('/add-profile', isAuthenticated, async (req, res) => {
 
       const profileId = result.insertId;
 
-      // Obtener fecha actual en zona horaria de México
-      const mexicoDate = new Date().toLocaleString('en-US', { timeZone: 'America/Mexico_City' });
-      const dateObj = new Date(mexicoDate);
-      const formattedDate = dateObj.toISOString().split('T')[0]; // Formato: YYYY-MM-DD
+      // Obtener fecha actual en zona horaria de México (UTC-6)
+      const now = new Date();
+      const mexicoOffset = -6 * 60; // México está en UTC-6
+      const mexicoTime = new Date(now.getTime() + (mexicoOffset + now.getTimezoneOffset()) * 60000);
+      const formattedDate = mexicoTime.toISOString().split('T')[0]; // Formato: YYYY-MM-DD
 
       // Insertar estadísticas iniciales en el historial
       await connection.query(
@@ -314,6 +315,29 @@ router.put('/notifications/read-all', isAuthenticated, async (req, res) => {
     res.json({ message: 'All notifications marked as read' });
   } catch (error) {
     console.error('Error marking all notifications as read:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// DEBUG: Ver últimos registros de historial (temporal)
+router.get('/debug/history/:profileId', isAuthenticated, async (req, res) => {
+  try {
+    const { profileId } = req.params;
+    const connection = await pool.getConnection();
+
+    const [history] = await connection.query(
+      `SELECT id, profile_id, follower_count, recorded_at, created_at
+       FROM tiktok_stats_history
+       WHERE profile_id = ?
+       ORDER BY recorded_at DESC
+       LIMIT 10`,
+      [profileId]
+    );
+
+    connection.release();
+    res.json({ history });
+  } catch (error) {
+    console.error('Error fetching debug history:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });
