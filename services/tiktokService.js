@@ -1,6 +1,6 @@
 const axios = require('axios');
 
-const RAPIDAPI_KEY = '4759dae0ebmshaed88115880926ap18abebjsn668e4e8043c2';
+const RAPIDAPI_KEY = '261b313806mshf2c91b12bdec53bp1aaee4jsna4f3f86b0111';
 const RAPIDAPI_HOST = 'tiktok-api23.p.rapidapi.com';
 const BASE_URL = 'https://tiktok-api23.p.rapidapi.com/api';
 
