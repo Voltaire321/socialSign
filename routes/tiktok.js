@@ -190,15 +190,15 @@ router.get('/profile/:id/history', isAuthenticated, async (req, res) => {
       return res.status(404).json({ error: 'Profile not found' });
     }
 
-    // Obtener historial
+    // Obtener historial - traer todos los registros disponibles
+    // El filtro de días es solo una referencia, pero siempre traemos lo que hay
     const [history] = await connection.query(
       `SELECT follower_count, following_count, video_count, heart_count,
               follower_change, video_change, heart_change, recorded_at
        FROM tiktok_stats_history
        WHERE profile_id = ?
-       ORDER BY recorded_at DESC
-       LIMIT ?`,
-      [id, parseInt(days)]
+       ORDER BY recorded_at DESC`,
+      [id]
     );
 
     connection.release();
