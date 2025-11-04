@@ -4,8 +4,30 @@ const RAPIDAPI_KEY = '261b313806mshf2c91b12bdec53bp1aaee4jsna4f3f86b0111';
 const RAPIDAPI_HOST = 'tiktok-api23.p.rapidapi.com';
 const BASE_URL = 'https://tiktok-api23.p.rapidapi.com/api';
 
+// Sistema de caché simple para evitar peticiones duplicadas
+const cache = new Map();
+const CACHE_DURATION = 60000; // 60 segundos
+
+// Limpiar caché periódicamente
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, value] of cache.entries()) {
+    if (now - value.timestamp > CACHE_DURATION) {
+      cache.delete(key);
+    }
+  }
+}, 30000); // Limpiar cada 30 segundos
+
 // Obtener información del usuario de TikTok
 async function getUserInfo(username) {
+  // Verificar caché
+  const cacheKey = `userinfo:${username.toLowerCase()}`;
+  const cached = cache.get(cacheKey);
+  
+  if (cached && (Date.now() - cached.timestamp < CACHE_DURATION)) {
+    console.log(`✅ Cache hit para @${username}`);
+    return cached.data;
+  }
   try {
     const options = {
       method: 'GET',
@@ -17,12 +39,13 @@ async function getUserInfo(username) {
       }
     };
 
+    console.log(`🌐 API call para @${username}`);
     const response = await axios.request(options);
     
     if (response.data && response.data.userInfo) {
       const { user, stats } = response.data.userInfo;
       
-      return {
+      const result = {
         success: true,
         data: {
           tiktok_id: user.id,
@@ -38,6 +61,14 @@ async function getUserInfo(username) {
           bio: user.signature || ''
         }
       };
+
+      // Guardar en caché
+      cache.set(cacheKey, {
+        data: result,
+        timestamp: Date.now()
+      });
+
+      return result;
     } else {
       return {
         success: false,
@@ -96,7 +127,20 @@ async function getUserPosts(username, maxCursor = 0, count = 10) {
   }
 }
 
+// Función para obtener estadísticas de caché
+function getCacheStats() {
+  return {
+    size: cache.size,
+    entries: Array.from(cache.entries()).map(([key, value]) => ({
+      key,
+      age: Date.now() - value.timestamp,
+      expired: (Date.now() - value.timestamp) > CACHE_DURATION
+    }))
+  };
+}
+
 module.exports = {
   getUserInfo,
-  getUserPosts
+  getUserPosts,
+  getCacheStats
 };

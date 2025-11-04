@@ -326,7 +326,7 @@ router.get('/debug/history/:profileId', isAuthenticated, async (req, res) => {
     const connection = await pool.getConnection();
 
     const [history] = await connection.query(
-      `SELECT id, profile_id, follower_count, recorded_at, created_at
+      `SELECT id, profile_id, follower_count, video_count, video_change, recorded_at, created_at
        FROM tiktok_stats_history
        WHERE profile_id = ?
        ORDER BY recorded_at DESC
@@ -338,6 +338,58 @@ router.get('/debug/history/:profileId', isAuthenticated, async (req, res) => {
     res.json({ history });
   } catch (error) {
     console.error('Error fetching debug history:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// FIX: Recalcular video_change para registros existentes
+router.post('/debug/fix-video-changes/:profileId', isAuthenticated, async (req, res) => {
+  try {
+    const { profileId } = req.params;
+    const connection = await pool.getConnection();
+
+    // Obtener todo el historial ordenado por fecha
+    const [history] = await connection.query(
+      `SELECT id, video_count, recorded_at
+       FROM tiktok_stats_history
+       WHERE profile_id = ?
+       ORDER BY recorded_at ASC`,
+      [profileId]
+    );
+
+    if (history.length === 0) {
+      connection.release();
+      return res.status(404).json({ error: 'No history found' });
+    }
+
+    let fixed = 0;
+    
+    // Recalcular video_change para cada registro
+    for (let i = 0; i < history.length; i++) {
+      const current = history[i];
+      const previous = i > 0 ? history[i - 1] : null;
+      
+      const correctChange = previous ? current.video_count - previous.video_count : 0;
+      
+      // Actualizar si es diferente
+      await connection.query(
+        `UPDATE tiktok_stats_history 
+         SET video_change = ?
+         WHERE id = ?`,
+        [correctChange, current.id]
+      );
+      
+      fixed++;
+    }
+
+    connection.release();
+    
+    res.json({ 
+      message: 'Video changes recalculated', 
+      recordsFixed: fixed 
+    });
+  } catch (error) {
+    console.error('Error fixing video changes:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });
